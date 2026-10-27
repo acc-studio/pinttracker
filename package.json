@@ -15,10 +15,8 @@
     "dev:emulators": "VITE_EMULATORS=1 vite",
     "emulators": "firebase emulators:start --only auth,firestore",
     "deploy:rules": "firebase deploy --only firestore:rules",
-    "release:patch": "npm version patch -m \"Release v%s\" && git push --follow-tags",
-    "release:minor": "npm version minor -m \"Release v%s\" && git push --follow-tags",
-    "release:major": "npm version major -m \"Release v%s\" && git push --follow-tags",
-    "android:release": "npm run build && npx cap sync android && cd android && gradlew assembleRelease"
+    "android:release": "npm run build && npx cap sync android && cd android && gradlew assembleRelease",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

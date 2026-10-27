@@ -59,10 +59,10 @@ For local development, `npm run android` opens Android Studio, and `npm run andr
 ## Releasing
 
 ```bash
-npm run release:patch   # 1.3.0 -> 1.3.1  (also :minor / :major)
+npm run release -- patch "Faster logging and a new stats chart"   # or minor / major
 ```
 
-This bumps `package.json`, commits, tags `vX.Y.Z` and pushes. The tag triggers `.github/workflows/release.yml`, which:
+This bumps `package.json`, commits, tags `vX.Y.Z` with your note (shown in the in-app update banner), and pushes. The tag triggers `.github/workflows/release.yml`, which:
 
 1. runs the tests, builds the web app and a **signed** release APK (versionCode = major·10000 + minor·100 + patch);
 2. publishes a GitHub Release with the APK attached;

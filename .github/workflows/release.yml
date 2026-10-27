@@ -83,7 +83,9 @@ jobs:
           URL: ${{ steps.release.outputs.url }}
         run: |
           curl -fsSLI "$URL" -o /dev/null   # the APK must be downloadable before apps are told about it
-          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | sed '/^-----BEGIN/,$d' | head -c 300)
+          # actions/checkout leaves a lightweight copy of the tag; refetch it to read the annotation.
+          git fetch -q --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          NOTES=$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME" | head -c 200)
           [ -z "$NOTES" ] && NOTES="Bug fixes and improvements."
           mkdir -p dist/android
           node -e '
