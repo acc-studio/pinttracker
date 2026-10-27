@@ -5,7 +5,7 @@ import { KIND_LABEL, type DrinkKind, type Entry } from '../lib/types'
 import { STANDARDS, fmtUnits, stdUnits } from '../lib/units'
 import { Sheet } from './Sheet'
 
-const SIZES = [25, 35, 50, 70, 125, 175, 250, 330, 500, 568]
+const SIZES = [25, 35, 50, 70, 125, 175, 250, 330, 500]
 const KIND_EMOJI: Record<DrinkKind, string> = {
   beer: '🍺', wine: '🍷', cocktail: '🍸', shot: '🔥', spirit: '🥃', other: '🥤', water: '💧',
 }
@@ -64,7 +64,7 @@ export function EntryEditor({ initial, isNew, onClose }: { initial: Entry; isNew
           <div className="chips">
             {SIZES.map((s) => (
               <button key={s} type="button" className={`chip${e.ml === s ? ' on' : ''}`} onClick={() => set('ml', s)}>
-                {s === 568 ? 'pint' : s}
+                {s}
               </button>
             ))}
           </div>

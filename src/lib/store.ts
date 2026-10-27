@@ -3,7 +3,7 @@ import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc, writeBatch, ty
 import { useSyncExternalStore } from 'react'
 import { auth, db } from './firebase'
 import { KIND_LABEL, type AppData, type DrinkKind, type Entry, type Preset, type Settings } from './types'
-import { defaultSettings } from './units'
+import { RETIRED_PRESETS, defaultSettings } from './units'
 
 /**
  * One store, two backends. Signed out, data lives in localStorage. Signed in,
@@ -40,6 +40,11 @@ function fixKind<T extends { kind: DrinkKind }>(x: T): T {
   return x.kind in KIND_LABEL ? x : { ...x, kind: 'other' }
 }
 
+/** Saved buttons: fix retired drink types and drop retired default buttons (e.g. pints). */
+function cleanPresets(presets: Preset[]): Preset[] {
+  return presets.filter((p) => !RETIRED_PRESETS.has(p.id)).map(fixKind)
+}
+
 function normalize(d: Partial<AppData>): AppData {
   if (!d || !Array.isArray(d.entries)) throw new Error('Not a PintTracker backup')
   const settings = { ...defaultSettings(), ...(d.settings ?? {}) }
@@ -51,7 +56,7 @@ function normalize(d: Partial<AppData>): AppData {
       .filter((e) => typeof e.ts === 'number' && typeof e.ml === 'number')
       .map(fixKind)
       .sort((a, b) => a.ts - b.ts),
-    settings: { ...settings, presets: settings.presets.map(fixKind) },
+    settings: { ...settings, presets: cleanPresets(settings.presets) },
   }
 }
 
@@ -204,7 +209,7 @@ onAuthStateChanged(auth, (user) => {
         const remote = snap.data()?.settings as Partial<Settings> | undefined
         if (remote) {
           const settings = { ...defaultSettings(), ...remote }
-          commit({ ...data, settings: { ...settings, presets: settings.presets.map(fixKind) } })
+          commit({ ...data, settings: { ...settings, presets: cleanPresets(settings.presets) } })
         } else if (!snap.metadata.fromCache) {
           // New account: adopt this device's settings.
           setDoc(userDoc(uid), { settings: data.settings }).catch(reportError)

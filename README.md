@@ -6,7 +6,7 @@ One codebase runs as a **web app / installable PWA** and as a **native Android a
 
 ## Features
 
-- **One-tap logging.** Big buttons for large beer (500 ml), small beer (330 ml), pint, wine, cocktail, single (35 ml) and double (70 ml) spirit, shot and fizz, plus water. Each button shows its volume. Tap to log; **hold** to adjust size, ABV, price or time. Every log shows an **Undo** toast.
+- **One-tap logging.** Big buttons for large beer (500 ml), small beer (330 ml), wine, cocktail, single (35 ml) and double (70 ml) spirit, shot and fizz, plus water. Each button shows its volume. Tap to log; **hold** to adjust size, ABV, price or time. Every log shows an **Undo** toast.
 - **Tonight view.** A progress ring against your daily limit (it turns red when you go over), drink count, spend, time since your last drink, and a pace warning (3+ drinks in an hour). There's also a weekly progress bar.
 - **Drinking nights, not calendar days.** Drinks before 5am (configurable) count toward the night before.
 - **Calendar.** A month grid with one dot per day, coloured by intake: green ring = dry, then pale gold → amber → orange → red for heavy days. Tap any day to see, edit or back-fill drinks.

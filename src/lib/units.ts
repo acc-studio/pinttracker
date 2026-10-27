@@ -48,7 +48,6 @@ export function fmtMoney(n: number, currency: string): string {
 export const DEFAULT_PRESETS: Preset[] = [
   { id: 'beer-large', name: 'Large beer', emoji: '🍺', kind: 'beer', ml: 500, abv: 5 },
   { id: 'beer-small', name: 'Small beer', emoji: '🥫', kind: 'beer', ml: 330, abv: 5 },
-  { id: 'pint', name: 'Pint', emoji: '🍻', kind: 'beer', ml: 568, abv: 4.5 },
   { id: 'wine', name: 'Glass of wine', emoji: '🍷', kind: 'wine', ml: 175, abv: 12.5 },
   { id: 'cocktail', name: 'Cocktail', emoji: '🍸', kind: 'cocktail', ml: 200, abv: 15 },
   { id: 'single', name: 'Single spirit', emoji: '🥃', kind: 'spirit', ml: 35, abv: 40 },
@@ -56,6 +55,9 @@ export const DEFAULT_PRESETS: Preset[] = [
   { id: 'shot', name: 'Shot', emoji: '🔥', kind: 'shot', ml: 25, abv: 40 },
   { id: 'prosecco', name: 'Fizz', emoji: '🥂', kind: 'wine', ml: 125, abv: 11 },
 ]
+
+/** Ids of default buttons that have since been retired; dropped from saved settings on load. */
+export const RETIRED_PRESETS = new Set(['pint', 'half'])
 
 export const WATER: Preset = { id: 'water', name: 'Water', emoji: '💧', kind: 'water', ml: 330, abv: 0 }
 
