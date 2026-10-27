@@ -78,15 +78,11 @@ export function SettingsView({ toast }: { toast: (msg: string) => void }) {
             <span className="field-hint">≈ {fmtGrams(unitsToGrams(settings.weeklyLimit, settings.standard))} alcohol</span>
           </label>
         </div>
-        <p className="muted small">
-          Defaults are the most generous official guidance: Ireland's 6 standard drinks (60 g) on any one occasion and the US NIAAA's 14 drinks
-          (196 g) a week. The UK's is lower, at 14 units (112 g) a week.{' '}
-          {(settings.dailyLimit !== STANDARDS.beer.daily || settings.weeklyLimit !== STANDARDS.beer.weekly) && (
-            <button type="button" className="link-btn inline" onClick={() => updateSettings({ dailyLimit: STANDARDS.beer.daily, weeklyLimit: STANDARDS.beer.weekly })}>
-              Reset to defaults
-            </button>
-          )}
-        </p>
+        {(settings.dailyLimit !== STANDARDS.beer.daily || settings.weeklyLimit !== STANDARDS.beer.weekly) && (
+          <button type="button" className="link-btn" onClick={() => updateSettings({ dailyLimit: STANDARDS.beer.daily, weeklyLimit: STANDARDS.beer.weekly })}>
+            Reset limits to {STANDARDS.beer.daily} / {STANDARDS.beer.weekly}
+          </button>
+        )}
         <div className="row">
           <label className="field grow">
             <span>New day starts at</span>

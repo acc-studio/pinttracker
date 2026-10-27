@@ -9,21 +9,13 @@ export function gramsOfAlcohol(ml: number, abv: number): number {
 /** One "Beer": the alcohol in a 500 ml beer at 5% ABV (≈ 19.7 g). */
 export const BEER_GRAMS = gramsOfAlcohol(500, 5)
 
-/**
- * Default limits: the most generous of the UK, Irish and US guidance (all sexes).
- *   weekly: UK 14 units × 8 g = 112 g · Ireland (HSE) 17 × 10 g = 170 g · US (NIAAA) 14 × 14 g = 196 g  → 196 g
- *   daily:  UK none · Ireland 6 × 10 g = 60 g per occasion · US (NIAAA) 4 × 14 g = 56 g             → 60 g
- * (The 2025–2030 US Dietary Guidelines set no numeric limit, so NIAAA's figures stand in for the US.)
- */
-export const GUIDELINE_GRAMS = { daily: 60, weekly: 196 }
-
 export const STANDARDS: Record<UnitStandard, { label: string; short: string; grams: number; daily: number; weekly: number }> = {
   beer: {
     label: 'Beers (500 ml at 5%)',
     short: 'beers',
     grams: BEER_GRAMS,
-    daily: Math.round((GUIDELINE_GRAMS.daily / BEER_GRAMS) * 10) / 10,
-    weekly: Math.round((GUIDELINE_GRAMS.weekly / BEER_GRAMS) * 10) / 10,
+    daily: 3,
+    weekly: 10,
   },
 }
 

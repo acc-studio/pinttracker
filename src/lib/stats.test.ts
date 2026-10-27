@@ -37,12 +37,11 @@ describe('units', () => {
     expect(stdUnits({ ml: 25, abv: 40 }, 'beer')).toBeCloseTo(0.4, 5)
     expect(stdUnits({ ml: 35, abv: 40 }, 'beer')).toBeCloseTo(0.56, 5)
   })
-  it('defaults to the most generous UK/Ireland/US limits', () => {
-    // daily: Ireland's 60 g per occasion; weekly: NIAAA's 196 g
+  it('defaults to 3 Beers a day and 10 a week', () => {
     expect(STANDARDS.beer.daily).toBe(3)
-    expect(STANDARDS.beer.weekly).toBe(9.9)
-    expect(unitsToGrams(STANDARDS.beer.weekly, 'beer')).toBeCloseTo(195.3, 1)
-    expect(defaultSettings()).toMatchObject({ standard: 'beer', dailyLimit: 3, weeklyLimit: 9.9 })
+    expect(STANDARDS.beer.weekly).toBe(10)
+    expect(unitsToGrams(STANDARDS.beer.weekly, 'beer')).toBeCloseTo(197.25, 2)
+    expect(defaultSettings()).toMatchObject({ standard: 'beer', dailyLimit: 3, weeklyLimit: 10 })
   })
   it('formats grams quietly', () => {
     expect(fmtGrams(59.4)).toBe('59 g')
@@ -104,7 +103,7 @@ describe('aggregation & streaks', () => {
 })
 
 describe('summarize', () => {
-  const s = defaultSettings() // 3 Beers/day, 9.9/week; three 4.5% pints ≈ 3.07 Beers
+  const s = defaultSettings() // 3 Beers/day, 10/week; three 4.5% pints ≈ 3.07 Beers
   const entries = [
     pint(at(2026, 10, 5), { price: 6 }),
     pint(at(2026, 10, 5, 21), { price: 6 }),

@@ -53,7 +53,9 @@ function cleanPresets(presets: Preset[]): Preset[] {
 function cleanSettings(saved: Partial<Settings> | undefined): Settings {
   const s = { ...defaultSettings(), ...(saved ?? {}) }
   const migrated = Object.hasOwn(STANDARDS, s.standard) ? s : { ...s, standard: 'beer' as const, dailyLimit: STANDARDS.beer.daily, weeklyLimit: STANDARDS.beer.weekly }
-  return { ...migrated, presets: cleanPresets(migrated.presets) }
+  // v1.4.0 defaulted the weekly limit to 9.9; untouched ones move to the new 10.
+  const weeklyLimit = migrated.weeklyLimit === 9.9 ? STANDARDS.beer.weekly : migrated.weeklyLimit
+  return { ...migrated, weeklyLimit, presets: cleanPresets(migrated.presets) }
 }
 
 function normalize(d: Partial<AppData>): AppData {
@@ -221,7 +223,7 @@ onAuthStateChanged(auth, (user) => {
           const settings = cleanSettings(remote)
           commit({ ...data, settings })
           // Save migrated settings back so every device agrees.
-          if (!snap.metadata.fromCache && remote.standard !== settings.standard) setDoc(userDoc(uid), { settings }).catch(reportError)
+          if (!snap.metadata.fromCache && (remote.standard !== settings.standard || remote.weeklyLimit !== settings.weeklyLimit)) setDoc(userDoc(uid), { settings }).catch(reportError)
         } else if (!snap.metadata.fromCache) {
           // New account: adopt this device's settings.
           setDoc(userDoc(uid), { settings: data.settings }).catch(reportError)
