@@ -5,6 +5,7 @@ name: Release
 #   2. publish a GitHub Release with the APK attached
 #   3. deploy the web app to Firebase Hosting with android/latest.json, which
 #      installed apps poll to update themselves (it points at the release APK)
+#   4. commit the APK to apk/PintTracker.apk on main
 on:
   push:
     tags: ['v*']
@@ -105,3 +106,18 @@ jobs:
 
       - name: Verify the manifest is live
         run: curl -fsS "$APP_URL/android/latest.json?t=$(date +%s)" | grep -q "\"${{ steps.version.outputs.version }}\""
+
+      - name: Commit APK to the repo (apk/PintTracker.apk)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git fetch -q origin main
+          git checkout -q -B main origin/main
+          mkdir -p apk
+          cp android/app/build/outputs/apk/release/app-release.apk apk/PintTracker.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apk/PintTracker.apk
+          git diff --cached --quiet && exit 0
+          git commit -q -m "APK v$VERSION [skip ci]"
+          git push -q origin main

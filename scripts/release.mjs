@@ -14,6 +14,8 @@ if (execFileSync('git', ['status', '--porcelain']).toString().trim()) {
   console.error('Commit or stash your changes first.')
   process.exit(1)
 }
+// CI commits the APK to main after each release; start from the latest main.
+git('pull', '--rebase', '--quiet', 'origin', 'main')
 const version = execFileSync('npm', ['version', bump, '--no-git-tag-version'], { shell: true }).toString().trim().replace(/^v/, '')
 git('add', 'package.json', 'package-lock.json')
 git('commit', '-m', `Release v${version}\n\n${notes}`)
