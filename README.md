@@ -16,7 +16,7 @@ One codebase runs as a **web app / installable PWA** and as a **native Android a
   - total units, average per drinking day, over-limit days and weeks, heaviest day
   - money spent and estimated calories
   - charts: units per week (with a limit line), average by weekday, time of day, breakdown by type, your usual order
-- **Units your way.** UK units (8 g), US standard drinks (14 g), or AU/EU standard drinks (10 g). Daily and weekly limits are editable.
+- **Measured in Beers.** One Beer is the alcohol in a 500 ml, 5% beer (≈19.7 g). Grams of pure alcohol are shown quietly alongside. Default limits are the most generous of the UK, Irish and US guidance: 3.0 Beers (60 g) a day, from Ireland's per-occasion limit, and 9.9 Beers (196 g) a week, from the US NIAAA. Both are editable.
 - **Custom buttons.** Add, edit, reorder or remove quick-log presets, each with its own price.
 - **Sync across devices.** Sign in with email and the same drinks show up on your phone and on the web. It works offline and syncs when you reconnect. Without signing in, everything stays on the device.
 - **Backups.** Back up or restore as JSON, or export a CSV.

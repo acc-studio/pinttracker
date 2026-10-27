@@ -64,7 +64,7 @@ export function BarChart({
   )
 }
 
-export function HBars({ rows }: { rows: { label: string; value: number; display: string }[] }) {
+export function HBars({ rows }: { rows: { label: string; value: number; display: string; sub?: string }[] }) {
   const max = Math.max(...rows.map((r) => r.value), 0) || 1
   return (
     <div className="hbars">
@@ -74,7 +74,10 @@ export function HBars({ rows }: { rows: { label: string; value: number; display:
           <span className="hbar-track">
             <span className="hbar" style={{ width: `${(r.value / max) * 100}%` }} />
           </span>
-          <span className="hbar-value">{r.display}</span>
+          <span className="hbar-value">
+            {r.display}
+            {r.sub && <span className="grams"> · {r.sub}</span>}
+          </span>
         </div>
       ))}
     </div>

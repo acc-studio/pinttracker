@@ -113,7 +113,9 @@ h3 {
   min-height: 100dvh;
 }
 main {
-  padding: max(env(safe-area-inset-top), 16px) 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 24px);
+  /* Bottom room always fits a toast, so the last row can scroll clear of it and
+     nothing jumps under your finger when a toast appears or goes away. */
+  padding: max(env(safe-area-inset-top), 16px) 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 88px);
 }
 .view {
   display: flex;
@@ -374,8 +376,34 @@ main {
   white-space: nowrap;
 }
 .entry-units {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+.entry-units .grams {
+  font-size: 0.68rem;
+}
+/* Grams of alcohol: always present, never shouting. */
+.grams {
+  font-weight: 400;
+  font-size: 0.78em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.hero-grams {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  opacity: 0.8;
+}
+.field-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.link-btn.inline {
+  padding: 0;
+  font-size: inherit;
 }
 .icon-btn {
   width: 44px;
@@ -410,11 +438,27 @@ main {
   z-index: 30;
   animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
-.toast button {
+.toast {
+  touch-action: none;
+}
+.toast-msg {
+  flex: 1;
+  min-width: 0;
+}
+.toast-undo {
   color: var(--accent);
   font-weight: 700;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
+}
+.toast-close {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+  flex: none;
 }
 @keyframes toast-in {
   from {

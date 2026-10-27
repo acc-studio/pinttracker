@@ -3,7 +3,7 @@ import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc, writeBatch, ty
 import { useSyncExternalStore } from 'react'
 import { auth, db } from './firebase'
 import { KIND_LABEL, type AppData, type DrinkKind, type Entry, type Preset, type Settings } from './types'
-import { RETIRED_PRESETS, defaultSettings } from './units'
+import { RETIRED_PRESETS, STANDARDS, defaultSettings } from './units'
 
 /**
  * One store, two backends. Signed out, data lives in localStorage. Signed in,
@@ -45,9 +45,19 @@ function cleanPresets(presets: Preset[]): Preset[] {
   return presets.filter((p) => !RETIRED_PRESETS.has(p.id)).map(fixKind)
 }
 
+/**
+ * Fill defaults and migrate old saves. Limits saved in a retired unit
+ * (UK units, US/AU standard drinks) mean nothing in Beers, so they reset to
+ * the guideline defaults.
+ */
+function cleanSettings(saved: Partial<Settings> | undefined): Settings {
+  const s = { ...defaultSettings(), ...(saved ?? {}) }
+  const migrated = Object.hasOwn(STANDARDS, s.standard) ? s : { ...s, standard: 'beer' as const, dailyLimit: STANDARDS.beer.daily, weeklyLimit: STANDARDS.beer.weekly }
+  return { ...migrated, presets: cleanPresets(migrated.presets) }
+}
+
 function normalize(d: Partial<AppData>): AppData {
   if (!d || !Array.isArray(d.entries)) throw new Error('Not a PintTracker backup')
-  const settings = { ...defaultSettings(), ...(d.settings ?? {}) }
   return {
     version: 1,
     owner: d.owner,
@@ -56,7 +66,7 @@ function normalize(d: Partial<AppData>): AppData {
       .filter((e) => typeof e.ts === 'number' && typeof e.ml === 'number')
       .map(fixKind)
       .sort((a, b) => a.ts - b.ts),
-    settings: { ...settings, presets: cleanPresets(settings.presets) },
+    settings: cleanSettings(d.settings),
   }
 }
 
@@ -208,8 +218,10 @@ onAuthStateChanged(auth, (user) => {
         offline.settings = snap.metadata.fromCache
         const remote = snap.data()?.settings as Partial<Settings> | undefined
         if (remote) {
-          const settings = { ...defaultSettings(), ...remote }
-          commit({ ...data, settings: { ...settings, presets: cleanPresets(settings.presets) } })
+          const settings = cleanSettings(remote)
+          commit({ ...data, settings })
+          // Save migrated settings back so every device agrees.
+          if (!snap.metadata.fromCache && remote.standard !== settings.standard) setDoc(userDoc(uid), { settings }).catch(reportError)
         } else if (!snap.metadata.fromCache) {
           // New account: adopt this device's settings.
           setDoc(userDoc(uid), { settings: data.settings }).catch(reportError)

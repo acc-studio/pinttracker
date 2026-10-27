@@ -2,14 +2,40 @@ import type { DrinkKind, Entry, Preset, Settings, UnitStandard } from './types'
 
 const ETHANOL_DENSITY = 0.789
 
-export const STANDARDS: Record<UnitStandard, { label: string; short: string; grams: number; daily: number; weekly: number }> = {
-  uk: { label: 'UK units (8 g)', short: 'units', grams: 8, daily: 6, weekly: 14 },
-  us: { label: 'US standard drinks (14 g)', short: 'drinks', grams: 14, daily: 4, weekly: 14 },
-  au: { label: 'AU/EU standard drinks (10 g)', short: 'std', grams: 10, daily: 4, weekly: 10 },
-}
-
 export function gramsOfAlcohol(ml: number, abv: number): number {
   return ml * (abv / 100) * ETHANOL_DENSITY
+}
+
+/** One "Beer": the alcohol in a 500 ml beer at 5% ABV (≈ 19.7 g). */
+export const BEER_GRAMS = gramsOfAlcohol(500, 5)
+
+/**
+ * Default limits: the most generous of the UK, Irish and US guidance (all sexes).
+ *   weekly: UK 14 units × 8 g = 112 g · Ireland (HSE) 17 × 10 g = 170 g · US (NIAAA) 14 × 14 g = 196 g  → 196 g
+ *   daily:  UK none · Ireland 6 × 10 g = 60 g per occasion · US (NIAAA) 4 × 14 g = 56 g             → 60 g
+ * (The 2025–2030 US Dietary Guidelines set no numeric limit, so NIAAA's figures stand in for the US.)
+ */
+export const GUIDELINE_GRAMS = { daily: 60, weekly: 196 }
+
+export const STANDARDS: Record<UnitStandard, { label: string; short: string; grams: number; daily: number; weekly: number }> = {
+  beer: {
+    label: 'Beers (500 ml at 5%)',
+    short: 'beers',
+    grams: BEER_GRAMS,
+    daily: Math.round((GUIDELINE_GRAMS.daily / BEER_GRAMS) * 10) / 10,
+    weekly: Math.round((GUIDELINE_GRAMS.weekly / BEER_GRAMS) * 10) / 10,
+  },
+}
+
+export function unitsToGrams(units: number, standard: UnitStandard): number {
+  return units * STANDARDS[standard].grams
+}
+
+/** Secondary, low-key display of pure alcohol: "59 g", "2.4 kg". */
+export function fmtGrams(g: number): string {
+  if (g >= 10_000) return `${Math.round(g / 1000)} kg`
+  if (g >= 1000) return `${(g / 1000).toFixed(1)} kg`
+  return `${Math.round(g)} g`
 }
 
 export function stdUnits(e: Pick<Entry, 'ml' | 'abv'>, standard: UnitStandard): number {
@@ -71,9 +97,9 @@ function localCurrency(): string {
 
 export function defaultSettings(): Settings {
   return {
-    standard: 'uk',
-    dailyLimit: STANDARDS.uk.daily,
-    weeklyLimit: STANDARDS.uk.weekly,
+    standard: 'beer',
+    dailyLimit: STANDARDS.beer.daily,
+    weeklyLimit: STANDARDS.beer.weekly,
     dayStartHour: 5,
     currency: localCurrency(),
     presets: DEFAULT_PRESETS.map((p) => ({ ...p })),

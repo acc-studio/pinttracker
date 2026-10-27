@@ -4,7 +4,8 @@ import { fmtAgo, fmtDay, fmtTime } from '../lib/format'
 import { aggregateByDay, dayKey, weekStart } from '../lib/stats'
 import { deleteEntry, useData, useSync } from '../lib/store'
 import type { Entry, Preset } from '../lib/types'
-import { STANDARDS, WATER, fmtMoney, fmtUnits, stdUnits } from '../lib/units'
+import { STANDARDS, WATER, fmtGrams, fmtMoney, fmtUnits, stdUnits, unitsToGrams } from '../lib/units'
+import { EntryAmount } from '../components/EntryAmount'
 
 interface Props {
   now: number
@@ -37,6 +38,7 @@ export function LogView({ now, onQuickLog, onCustom, onEdit, onDeleted, onOpenSe
         <Ring value={units} max={settings.dailyLimit}>
           <span className="hero-num">{fmtUnits(units)}</span>
           <span className="hero-unit">{unit} tonight</span>
+          {units > 0 && <span className="grams hero-grams">{fmtGrams(unitsToGrams(units, settings.standard))} alcohol</span>}
         </Ring>
         <div className="hero-meta">
           <span className="muted">{fmtDay(today, { weekday: 'long', day: 'numeric', month: 'short' })}</span>
@@ -59,6 +61,7 @@ export function LogView({ now, onQuickLog, onCustom, onEdit, onDeleted, onOpenSe
           <span>This week</span>
           <span>
             <strong>{fmtUnits(weekUnits)}</strong> / {settings.weeklyLimit} {unit}
+            <span className="grams"> · {fmtGrams(unitsToGrams(weekUnits, settings.standard))}</span>
           </span>
         </div>
         <div className="meter">
@@ -95,7 +98,7 @@ export function LogView({ now, onQuickLog, onCustom, onEdit, onDeleted, onOpenSe
                     <span>{e.name}</span>
                     <span className="muted small">{fmtTime(e.ts)}</span>
                   </span>
-                  <span className="entry-units">{e.kind === 'water' ? '' : fmtUnits(stdUnits(e, settings.standard))}</span>
+                  <EntryAmount e={e} standard={settings.standard} />
                 </button>
                 <button
                   className="icon-btn"

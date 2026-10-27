@@ -4,8 +4,8 @@ import { fmtHour } from '../lib/format'
 import { isNative, saveFile } from '../lib/native'
 import { checkForUpdate } from '../lib/updater'
 import { getData, importData, seedDemo, uid, updateSettings, useData, useSync, wipe } from '../lib/store'
-import { KIND_LABEL, type DrinkKind, type Preset, type UnitStandard } from '../lib/types'
-import { DEFAULT_PRESETS, STANDARDS, fmtUnits, stdUnits } from '../lib/units'
+import { KIND_LABEL, type DrinkKind, type Preset } from '../lib/types'
+import { BEER_GRAMS, DEFAULT_PRESETS, gramsOfAlcohol, STANDARDS, fmtGrams, fmtUnits, stdUnits, unitsToGrams } from '../lib/units'
 
 export function SettingsView({ toast }: { toast: (msg: string) => void }) {
   const { settings, entries } = useData()
@@ -28,7 +28,7 @@ export function SettingsView({ toast }: { toast: (msg: string) => void }) {
     await saveFile(`pinttracker-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(backup, null, 2), 'application/json')
   }
   async function exportCsv() {
-    const rows = [['date', 'time', 'name', 'type', 'ml', 'abv', `${STANDARDS[settings.standard].short}`, 'price', 'note']]
+    const rows = [['date', 'time', 'name', 'type', 'ml', 'abv', `${STANDARDS[settings.standard].short}`, 'grams_alcohol', 'price', 'note']]
     for (const e of entries) {
       const d = new Date(e.ts)
       rows.push([
@@ -39,6 +39,7 @@ export function SettingsView({ toast }: { toast: (msg: string) => void }) {
         `${e.ml}`,
         `${e.abv}`,
         stdUnits(e, settings.standard).toFixed(2),
+        gramsOfAlcohol(e.ml, e.abv).toFixed(1),
         e.price != null ? `${e.price}` : '',
         e.note ?? '',
       ])
@@ -61,32 +62,31 @@ export function SettingsView({ toast }: { toast: (msg: string) => void }) {
       <AccountCard toast={toast} />
       <section className="card form">
         <h3 className="section-title">Measuring</h3>
-        <label className="field">
-          <span>Standard drink</span>
-          <select
-            value={settings.standard}
-            onChange={(e) => {
-              const st = e.target.value as UnitStandard
-              updateSettings({ standard: st, dailyLimit: STANDARDS[st].daily, weeklyLimit: STANDARDS[st].weekly })
-            }}
-          >
-            {(Object.keys(STANDARDS) as UnitStandard[]).map((k) => (
-              <option key={k} value={k}>
-                {STANDARDS[k].label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <p className="muted small">
+          Everything is counted in <strong>Beers</strong>: the alcohol in one 500 ml beer at 5% (≈{fmtGrams(BEER_GRAMS)}). A single spirit is about
+          0.6, a glass of wine about 0.9.
+        </p>
         <div className="row">
           <label className="field grow">
-            <span>Daily limit</span>
-            <input type="number" inputMode="decimal" min={1} step={0.5} value={settings.dailyLimit} onChange={(e) => updateSettings({ dailyLimit: Number(e.target.value) || 1 })} />
+            <span>Daily limit (Beers)</span>
+            <input type="number" inputMode="decimal" min={0.5} step={0.1} value={settings.dailyLimit} onChange={(e) => updateSettings({ dailyLimit: Number(e.target.value) || 0.5 })} />
+            <span className="field-hint">≈ {fmtGrams(unitsToGrams(settings.dailyLimit, settings.standard))} alcohol</span>
           </label>
           <label className="field grow">
-            <span>Weekly limit</span>
-            <input type="number" inputMode="decimal" min={1} value={settings.weeklyLimit} onChange={(e) => updateSettings({ weeklyLimit: Number(e.target.value) || 1 })} />
+            <span>Weekly limit (Beers)</span>
+            <input type="number" inputMode="decimal" min={0.5} step={0.1} value={settings.weeklyLimit} onChange={(e) => updateSettings({ weeklyLimit: Number(e.target.value) || 0.5 })} />
+            <span className="field-hint">≈ {fmtGrams(unitsToGrams(settings.weeklyLimit, settings.standard))} alcohol</span>
           </label>
         </div>
+        <p className="muted small">
+          Defaults are the most generous official guidance: Ireland's 6 standard drinks (60 g) on any one occasion and the US NIAAA's 14 drinks
+          (196 g) a week. The UK's is lower, at 14 units (112 g) a week.{' '}
+          {(settings.dailyLimit !== STANDARDS.beer.daily || settings.weeklyLimit !== STANDARDS.beer.weekly) && (
+            <button type="button" className="link-btn inline" onClick={() => updateSettings({ dailyLimit: STANDARDS.beer.daily, weeklyLimit: STANDARDS.beer.weekly })}>
+              Reset to defaults
+            </button>
+          )}
+        </p>
         <div className="row">
           <label className="field grow">
             <span>New day starts at</span>
@@ -157,7 +157,7 @@ export function SettingsView({ toast }: { toast: (msg: string) => void }) {
                     onChange={(e) => setPreset(p.id, { price: e.target.value === '' ? undefined : Number(e.target.value) })}
                   />
                 </label>
-                <span className="muted">{fmtUnits(stdUnits(p, settings.standard))}u</span>
+                <span className="muted">{fmtUnits(stdUnits(p, settings.standard))} beers</span>
               </div>
             </li>
           ))}

@@ -24,7 +24,7 @@ export interface Entry {
 }
 
 /** How a "standard drink" is defined: grams of pure alcohol per unit. */
-export type UnitStandard = 'uk' | 'us' | 'au'
+export type UnitStandard = 'beer'
 
 export interface Settings {
   standard: UnitStandard

@@ -2,7 +2,8 @@ import { fmtDay, fmtTime } from '../lib/format'
 import { LEVEL_LABEL, aggregateByDay, dayKey, level, parseKey } from '../lib/stats'
 import { useData } from '../lib/store'
 import type { Entry } from '../lib/types'
-import { STANDARDS, fmtMoney, fmtUnits, stdUnits } from '../lib/units'
+import { STANDARDS, fmtGrams, fmtMoney, fmtUnits, unitsToGrams } from '../lib/units'
+import { EntryAmount } from './EntryAmount'
 import { Sheet } from './Sheet'
 
 export function DaySheet({ dayKey: key, onClose, onEdit, onAdd }: { dayKey: string; onClose: () => void; onEdit: (e: Entry) => void; onAdd: (ts: number) => void }) {
@@ -26,6 +27,7 @@ export function DaySheet({ dayKey: key, onClose, onEdit, onAdd }: { dayKey: stri
         <span className={`dot lv${lv}`} />
         <span>
           <strong>{fmtUnits(units)}</strong> {unit} · {t?.drinks ?? 0} drinks · {LEVEL_LABEL[lv]}
+          {units > 0 && <span className="grams"> · {fmtGrams(unitsToGrams(units, settings.standard))}</span>}
           {t && t.spend > 0 && <> · {fmtMoney(t.spend, settings.currency)}</>}
         </span>
       </div>
@@ -43,7 +45,7 @@ export function DaySheet({ dayKey: key, onClose, onEdit, onAdd }: { dayKey: stri
                     {fmtTime(e.ts)} · {e.ml} ml · {e.abv}%{e.note ? ` · ${e.note}` : ''}
                   </span>
                 </span>
-                <span className="entry-units">{e.kind === 'water' ? '' : fmtUnits(stdUnits(e, settings.standard))}</span>
+                <EntryAmount e={e} standard={settings.standard} />
               </button>
             </li>
           ))}

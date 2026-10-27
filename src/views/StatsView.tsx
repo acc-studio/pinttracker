@@ -4,7 +4,7 @@ import { WEEKDAYS, fmtDay, fmtHour, fmtShortDay } from '../lib/format'
 import { addDays, aggregateByDay, currentDryStreak, dayKey, firstDay, summarize } from '../lib/stats'
 import { useData } from '../lib/store'
 import { KIND_LABEL } from '../lib/types'
-import { STANDARDS, fmtMoney, fmtUnits } from '../lib/units'
+import { STANDARDS, fmtGrams, fmtMoney, fmtUnits, unitsToGrams } from '../lib/units'
 
 const RANGES = [
   { id: '4w', label: '4 weeks', days: 28 },
@@ -54,12 +54,12 @@ export function StatsView({ now, onDay }: { now: number; onDay: (k: string) => v
       </p>
 
       <section className="tiles">
-        <Tile label="Avg per week" value={fmtUnits(s.avgPerWeek)} sub={`${unit} · limit ${settings.weeklyLimit}`} tone={weekAvgOver ? 'bad' : 'good'} />
+        <Tile label="Avg per week" value={fmtUnits(s.avgPerWeek)} sub={`${unit} · ${fmtGrams(unitsToGrams(s.avgPerWeek, settings.standard))} · limit ${settings.weeklyLimit}`} tone={weekAvgOver ? 'bad' : 'good'} />
         <Tile label="Dry days" value={`${dryPct}%`} sub={`${s.dryDays} of ${s.days} days`} tone={dryPct >= 50 ? 'good' : undefined} />
         <Tile label="Dry streak now" value={`${dry}`} sub={dry === 1 ? 'day' : 'days'} />
         <Tile label="Longest dry run" value={`${s.longestDry}`} sub="days in period" />
-        <Tile label="Total" value={fmtUnits(s.units)} sub={`${unit} · ${s.drinks} drinks`} />
-        <Tile label="Per drinking day" value={fmtUnits(s.avgPerDrinkingDay)} sub={`${unit} avg`} tone={s.avgPerDrinkingDay > settings.dailyLimit ? 'bad' : undefined} />
+        <Tile label="Total" value={fmtUnits(s.units)} sub={`${unit} · ${fmtGrams(unitsToGrams(s.units, settings.standard))} · ${s.drinks} drinks`} />
+        <Tile label="Per drinking day" value={fmtUnits(s.avgPerDrinkingDay)} sub={`${unit} avg · ${fmtGrams(unitsToGrams(s.avgPerDrinkingDay, settings.standard))}`} tone={s.avgPerDrinkingDay > settings.dailyLimit ? 'bad' : undefined} />
         <Tile label="Over daily limit" value={`${s.overDays}`} sub={`days · ${s.weeksOverLimit} weeks over`} tone={s.overDays > 0 ? 'bad' : 'good'} />
         <Tile
           label="Heaviest day"
@@ -76,7 +76,7 @@ export function StatsView({ now, onDay }: { now: number; onDay: (k: string) => v
         <BarChart
           bars={s.weeks.map((w) => ({
             label: fmtDay(w.start, { day: 'numeric', month: 'numeric' }),
-            detail: `Week of ${fmtShortDay(w.start)}: ${fmtUnits(w.units)} ${unit}`,
+            detail: `Week of ${fmtShortDay(w.start)}: ${fmtUnits(w.units)} ${unit} (${fmtGrams(unitsToGrams(w.units, settings.standard))})`,
             value: w.units,
             hot: w.units > settings.weeklyLimit,
           }))}
@@ -89,7 +89,7 @@ export function StatsView({ now, onDay }: { now: number; onDay: (k: string) => v
       <section className="card">
         <h3 className="section-title">Average by weekday</h3>
         <BarChart
-          bars={s.byWeekday.map((v, i) => ({ label: WEEKDAYS[i], detail: `${WEEKDAYS[i]}: ${fmtUnits(v)} ${unit} on average`, value: v, hot: v > settings.dailyLimit }))}
+          bars={s.byWeekday.map((v, i) => ({ label: WEEKDAYS[i], detail: `${WEEKDAYS[i]}: ${fmtUnits(v)} ${unit} (${fmtGrams(unitsToGrams(v, settings.standard))}) on average`, value: v, hot: v > settings.dailyLimit }))}
           height={110}
         />
       </section>
@@ -106,7 +106,7 @@ export function StatsView({ now, onDay }: { now: number; onDay: (k: string) => v
       {s.byKind.length > 0 && (
         <section className="card">
           <h3 className="section-title">By type</h3>
-          <HBars rows={s.byKind.map((k) => ({ label: KIND_LABEL[k.kind], value: k.units, display: `${fmtUnits(k.units)} ${unit}` }))} />
+          <HBars rows={s.byKind.map((k) => ({ label: KIND_LABEL[k.kind], value: k.units, display: `${fmtUnits(k.units)} ${unit}`, sub: `${fmtGrams(unitsToGrams(k.units, settings.standard))}` }))} />
         </section>
       )}
 

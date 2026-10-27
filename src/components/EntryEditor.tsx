@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { addEntry, deleteEntry, getData, uid, updateEntry, updateSettings } from '../lib/store'
 import { fromLocalInput, toLocalInput } from '../lib/format'
 import { KIND_LABEL, type DrinkKind, type Entry } from '../lib/types'
-import { STANDARDS, fmtUnits, stdUnits } from '../lib/units'
+import { STANDARDS, fmtGrams, fmtUnits, gramsOfAlcohol, stdUnits } from '../lib/units'
 import { Sheet } from './Sheet'
 
 const SIZES = [25, 35, 50, 70, 125, 175, 250, 330, 500]
@@ -109,6 +109,7 @@ export function EntryEditor({ initial, isNew, onClose }: { initial: Entry; isNew
 
         <p className="muted small">
           = <strong>{fmtUnits(stdUnits(e, settings.standard))}</strong> {STANDARDS[settings.standard].short}
+          <span className="grams"> · {fmtGrams(gramsOfAlcohol(e.ml, e.abv))} alcohol</span>
         </p>
 
         <div className="actions">

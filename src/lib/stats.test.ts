@@ -10,7 +10,7 @@ import {
   weekStart,
 } from './stats'
 import type { Entry } from './types'
-import { defaultSettings, gramsOfAlcohol, stdUnits } from './units'
+import { BEER_GRAMS, STANDARDS, defaultSettings, fmtGrams, gramsOfAlcohol, stdUnits, unitsToGrams } from './units'
 
 const at = (y: number, m: number, d: number, h = 20, min = 0) => new Date(y, m - 1, d, h, min).getTime()
 let n = 0
@@ -29,11 +29,24 @@ describe('units', () => {
   it('computes grams of ethanol', () => {
     expect(gramsOfAlcohol(1000, 10)).toBeCloseTo(78.9)
   })
-  it('a 4.5% pint is ~2.5 UK units', () => {
-    expect(stdUnits({ ml: 568, abv: 4.5 }, 'uk')).toBeCloseTo(2.52, 1)
+  it('a 500 ml 5% beer is exactly 1 Beer (~19.7 g)', () => {
+    expect(BEER_GRAMS).toBeCloseTo(19.725, 3)
+    expect(stdUnits({ ml: 500, abv: 5 }, 'beer')).toBe(1)
   })
-  it('a 25ml 40% shot is ~1 UK unit', () => {
-    expect(stdUnits({ ml: 25, abv: 40 }, 'uk')).toBeCloseTo(0.99, 1)
+  it('a 25 ml 40% shot is 0.4 Beers, a 35 ml single 0.56', () => {
+    expect(stdUnits({ ml: 25, abv: 40 }, 'beer')).toBeCloseTo(0.4, 5)
+    expect(stdUnits({ ml: 35, abv: 40 }, 'beer')).toBeCloseTo(0.56, 5)
+  })
+  it('defaults to the most generous UK/Ireland/US limits', () => {
+    // daily: Ireland's 60 g per occasion; weekly: NIAAA's 196 g
+    expect(STANDARDS.beer.daily).toBe(3)
+    expect(STANDARDS.beer.weekly).toBe(9.9)
+    expect(unitsToGrams(STANDARDS.beer.weekly, 'beer')).toBeCloseTo(195.3, 1)
+    expect(defaultSettings()).toMatchObject({ standard: 'beer', dailyLimit: 3, weeklyLimit: 9.9 })
+  })
+  it('formats grams quietly', () => {
+    expect(fmtGrams(59.4)).toBe('59 g')
+    expect(fmtGrams(2400)).toBe('2.4 kg')
   })
 })
 
@@ -91,7 +104,7 @@ describe('aggregation & streaks', () => {
 })
 
 describe('summarize', () => {
-  const s = { ...defaultSettings(), dailyLimit: 6, weeklyLimit: 14 }
+  const s = defaultSettings() // 3 Beers/day, 9.9/week; three 4.5% pints ≈ 3.07 Beers
   const entries = [
     pint(at(2026, 10, 5), { price: 6 }),
     pint(at(2026, 10, 5, 21), { price: 6 }),

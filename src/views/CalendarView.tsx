@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { WEEKDAYS, fmtShortDay } from '../lib/format'
 import { LEVEL_LABEL, aggregateByDay, dayKey, firstDay, keyOfDate, level, type Level } from '../lib/stats'
 import { useData } from '../lib/store'
-import { STANDARDS, fmtUnits } from '../lib/units'
+import { STANDARDS, fmtGrams, fmtUnits, unitsToGrams } from '../lib/units'
 
 export function CalendarView({ now, onDay }: { now: number; onDay: (key: string) => void }) {
   const { entries, settings } = useData()
@@ -53,7 +53,7 @@ export function CalendarView({ now, onDay }: { now: number; onDay: (key: string)
   const tip = (k: string) => {
     const t = byDay.get(k)
     const c = cell(k)
-    return `${fmtShortDay(k)}: ${c === 'none' ? 'not tracked' : `${fmtUnits(t?.units ?? 0)} ${unit} · ${LEVEL_LABEL[c]}`}`
+    return `${fmtShortDay(k)}: ${c === 'none' ? 'not tracked' : `${fmtUnits(t?.units ?? 0)} ${unit} (${fmtGrams(unitsToGrams(t?.units ?? 0, settings.standard))}) · ${LEVEL_LABEL[c]}`}`
   }
 
   return (
@@ -92,6 +92,7 @@ export function CalendarView({ now, onDay }: { now: number; onDay: (key: string)
         <div className="month-stats">
           <span>
             <strong>{fmtUnits(mUnits)}</strong> {unit}
+            <span className="grams"> · {fmtGrams(unitsToGrams(mUnits, settings.standard))}</span>
           </span>
           <span>
             <strong>{mDrinking}</strong> drinking

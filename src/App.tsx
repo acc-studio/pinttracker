@@ -55,6 +55,12 @@ export default function App() {
     setToast({ id: Date.now(), msg, undo })
     toastTimer.current = window.setTimeout(() => setToast(null), undo ? 5000 : 2500)
   }, [])
+  const toastSwipe = useRef<number | null>(null)
+  const dismissToast = useCallback(() => {
+    window.clearTimeout(toastTimer.current)
+    toastSwipe.current = null
+    setToast(null)
+  }, [])
 
   useEffect(() => {
     const root = document.documentElement
@@ -153,19 +159,30 @@ export default function App() {
       {overlay?.type === 'entry' && <EntryEditor key={overlay.entry.id} initial={overlay.entry} isNew={overlay.isNew} onClose={closeEditor} />}
 
       {toast && (
-        <div className="toast" key={toast.id} role="status">
-          <span>{toast.msg}</span>
+        <div
+          className="toast"
+          key={toast.id}
+          role="status"
+          // Swipe down to dismiss.
+          onPointerDown={(e) => (toastSwipe.current = e.clientY)}
+          onPointerUp={(e) => toastSwipe.current != null && e.clientY - toastSwipe.current > 24 && dismissToast()}
+        >
+          <span className="toast-msg">{toast.msg}</span>
           {toast.undo && (
             <button
+              className="toast-undo"
               onClick={() => {
                 toast.undo!()
-                setToast(null)
+                dismissToast()
                 tap()
               }}
             >
               Undo
             </button>
           )}
+          <button className="toast-close" onClick={dismissToast} aria-label="Dismiss">
+            ✕
+          </button>
         </div>
       )}
     </div>
