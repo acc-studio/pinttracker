@@ -2,9 +2,9 @@ name: Release
 
 # Push a tag like v1.3.0 (npm run release:minor does it) to ship web + Android together:
 #   1. build the web app and a signed release APK
-#   2. deploy the web app to Firebase Hosting along with android/latest.json + the APK,
-#      which installed apps poll to update themselves
-#   3. publish a GitHub Release with the APK attached
+#   2. publish a GitHub Release with the APK attached
+#   3. deploy the web app to Firebase Hosting with android/latest.json, which
+#      installed apps poll to update themselves (it points at the release APK)
 on:
   push:
     tags: ['v*']
@@ -63,24 +63,34 @@ jobs:
           ./gradlew assembleRelease --no-daemon
           "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | head -2
 
-      - name: Stage APK and update manifest
-        id: stage
+      # The APK lives on GitHub Releases (Firebase's free plan won't host .apk files);
+      # Firebase Hosting serves only the small manifest that installed apps poll.
+      - name: GitHub Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          APK="PintTracker-$VERSION.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/$APK"
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/$APK" --title "PintTracker $GITHUB_REF_NAME" --generate-notes
+          echo "url=https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Write update manifest
         env:
           VERSION: ${{ steps.version.outputs.version }}
           CODE: ${{ steps.version.outputs.code }}
+          URL: ${{ steps.release.outputs.url }}
         run: |
-          APK="PintTracker-$VERSION.apk"
-          mkdir -p dist/android
-          cp android/app/build/outputs/apk/release/app-release.apk "dist/android/$APK"
-          cp "dist/android/$APK" "$RUNNER_TEMP/$APK"
+          curl -fsSLI "$URL" -o /dev/null   # the APK must be downloadable before apps are told about it
           NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | sed '/^-----BEGIN/,$d' | head -c 300)
           [ -z "$NOTES" ] && NOTES="Bug fixes and improvements."
+          mkdir -p dist/android
           node -e '
             const [v, code, url, notes] = process.argv.slice(1)
             require("fs").writeFileSync("dist/android/latest.json", JSON.stringify({ versionName: v, versionCode: +code, url, notes: notes.trim() }, null, 2))
-          ' "$VERSION" "$CODE" "$APP_URL/android/$APK" "$NOTES"
+          ' "$VERSION" "$CODE" "$URL" "$NOTES"
           cat dist/android/latest.json
-          echo "apk=$APK" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Firebase Hosting
         env:
@@ -93,8 +103,3 @@ jobs:
 
       - name: Verify the manifest is live
         run: curl -fsS "$APP_URL/android/latest.json?t=$(date +%s)" | grep -q "\"${{ steps.version.outputs.version }}\""
-
-      - name: GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/${{ steps.stage.outputs.apk }}" --title "PintTracker $GITHUB_REF_NAME" --generate-notes

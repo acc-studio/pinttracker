@@ -50,7 +50,7 @@ Live at **https://pint-tracker.web.app**. It updates on every release. On a phon
 
 ## Android app
 
-Install the latest APK from the GitHub Releases page or from https://pint-tracker.web.app/android/latest.json. After that, the app **updates itself**: on launch and when resumed, it checks `android/latest.json` on Firebase Hosting. When a newer version exists, it shows an **Update** banner, downloads the APK, and opens Android's installer. The first time, Android asks you to allow installs from PintTracker. Settings → *Check for updates* forces a check.
+Install the latest APK from **[GitHub Releases](https://github.com/acc-studio/pinttracker/releases/latest)**. After that, the app **updates itself**: on launch and when resumed, it checks `android/latest.json` on Firebase Hosting. When a newer version exists, it shows an **Update** banner, downloads the APK, and opens Android's installer. The first time, Android asks you to allow installs from PintTracker. Settings → *Check for updates* forces a check.
 
 In-app updates only work because every release is signed with the **same key**. It lives in `~/.pinttracker-signing/` (`release.jks` + `password.txt`) and in the repo secrets. **Back it up.** If it's lost, existing installs can never update again and have to be reinstalled.
 
@@ -65,8 +65,8 @@ npm run release:patch   # 1.3.0 -> 1.3.1  (also :minor / :major)
 This bumps `package.json`, commits, tags `vX.Y.Z` and pushes. The tag triggers `.github/workflows/release.yml`, which:
 
 1. runs the tests, builds the web app and a **signed** release APK (versionCode = major·10000 + minor·100 + patch);
-2. deploys the web app to Firebase Hosting, along with `android/PintTracker-X.Y.Z.apk` and `android/latest.json`, so installed apps update themselves;
-3. publishes a GitHub Release with the APK attached.
+2. publishes a GitHub Release with the APK attached;
+3. deploys the web app to Firebase Hosting with `android/latest.json`, which points at that APK, so installed apps update themselves. The APK itself stays on GitHub because Firebase's free plan doesn't allow `.apk` files.
 
 Repo secrets used: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `FIREBASE_SERVICE_ACCOUNT` (the `github-deploy` service account, which has only Hosting deploy rights).
 
