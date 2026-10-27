@@ -1,0 +1,100 @@
+name: Release
+
+# Push a tag like v1.3.0 (npm run release:minor does it) to ship web + Android together:
+#   1. build the web app and a signed release APK
+#   2. deploy the web app to Firebase Hosting along with android/latest.json + the APK,
+#      which installed apps poll to update themselves
+#   3. publish a GitHub Release with the APK attached
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: https://pint-tracker.web.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: Check tag matches package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $VERSION"; exit 1
+          fi
+          IFS=. read -r MA MI PA <<< "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$((MA * 10000 + MI * 100 + PA))" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Build signed APK
+        working-directory: android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PT_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          export PT_KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_B64" | base64 -d > "$PT_KEYSTORE_FILE"
+          ./gradlew assembleRelease --no-daemon
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk | head -2
+
+      - name: Stage APK and update manifest
+        id: stage
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          APK="PintTracker-$VERSION.apk"
+          mkdir -p dist/android
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/android/$APK"
+          cp "dist/android/$APK" "$RUNNER_TEMP/$APK"
+          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | sed '/^-----BEGIN/,$d' | head -c 300)
+          [ -z "$NOTES" ] && NOTES="Bug fixes and improvements."
+          node -e '
+            const [v, code, url, notes] = process.argv.slice(1)
+            require("fs").writeFileSync("dist/android/latest.json", JSON.stringify({ versionName: v, versionCode: +code, url, notes: notes.trim() }, null, 2))
+          ' "$VERSION" "$CODE" "$APP_URL/android/$APK" "$NOTES"
+          cat dist/android/latest.json
+          echo "apk=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Firebase Hosting
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@15 deploy --only hosting --non-interactive
+          rm "$RUNNER_TEMP/sa.json"
+
+      - name: Verify the manifest is live
+        run: curl -fsS "$APP_URL/android/latest.json?t=$(date +%s)" | grep -q "\"${{ steps.version.outputs.version }}\""
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/${{ steps.stage.outputs.apk }}" --title "PintTracker $GITHUB_REF_NAME" --generate-notes
